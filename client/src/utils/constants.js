@@ -35,7 +35,7 @@ export const SidebarContent = [
         />
       </svg>
     ),
-    link: "/resources",
+    link: "",
   },
   {
     name: "Analytics",
@@ -60,7 +60,7 @@ export const SidebarContent = [
         />
       </svg>
     ),
-    link: "/analytics",
+    link: "",
   },
   {
     name: "Notification",

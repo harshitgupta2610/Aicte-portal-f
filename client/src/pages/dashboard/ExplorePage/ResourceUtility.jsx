@@ -1,11 +1,12 @@
 const data=[
+    // {
+    //     url:"https://www.cse.iitb.ac.in/#/",
+    //     instituteName:"IIT-Bombay",
+    //     subjectname:"Computer Science Engineering",   
+    //     level:"undergraduate",
+    //     program:"Engineering & Technology",   
+    // },{
     {
-        url:"https://www.cse.iitb.ac.in/#/",
-        instituteName:"IIT-Bombay",
-        subjectname:"Computer Science Engineering",   
-        level:"undergraduate",
-        program:"Engineering & Technology",   
-    },{
         url:"https://www.iitm.ac.in/sites/default/files/Academic%20Curricula%20Files/B.Tech-Curriculum-2019.pdf",
         instituteName:"IIT-Madras",
         subjectname:"Civil Engineering",   
@@ -27,7 +28,7 @@ const data=[
     },
     {
         url:"https://www.iitm.ac.in/sites/default/files/Academic%20Curricula%20Files/B.Tech-Curriculum-2019.pdf",
-        instituteName:"IIT-Madra",
+        instituteName:"IIT-Madras",
         subjectname:"Aerospace Engineering",   
         level:"undergraduate",
         program:"Engineering & Technology",   

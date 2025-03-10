@@ -160,15 +160,32 @@ module.exports.registerDev = async (req, res, next) => {
 module.exports.verifyByToken = async (req, res, next) => {
   const token = req.cookies.token;
   if (!token) {
-    throw new UNAUTHORIZED_USER("Invalid Authentication!");
+    throw new UNAUTHORIZED_USER("Invalid Authentication! No token provided.");
   }
-  const payload = jwt.verify(token, process.env.JWT_SECRET);
-  const user = await User.findById(payload.id);
+  
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(payload.id);
 
-  if (!user || payload.role !== user.role) throw new UNAUTHORIZED_USER("");
+    if (!user) {
+      throw new UNAUTHORIZED_USER("User not found. Please login again.");
+    }
+    
+    if (payload.role !== user.role) {
+      throw new UNAUTHORIZED_USER("User role mismatch. Please login again.");
+    }
 
-  const newToken = createJWT(user);
-  sendRes(res, 200, newToken, user);
+    const newToken = createJWT(user);
+    sendRes(res, 200, newToken, user);
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      throw new UNAUTHORIZED_USER("Invalid token. Please login again.");
+    }
+    if (error.name === 'TokenExpiredError') {
+      throw new UNAUTHORIZED_USER("Token expired. Please login again.");
+    }
+    throw error;
+  }
 };
 
 module.exports.login = async (req, res, next) => {

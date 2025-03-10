@@ -90,29 +90,21 @@ exports.generateHTML = generateHTML;
 exports.generatePDF = async function (commonId, res, next) {
   const browser = await puppeteer.launch({
     headless: true,
-    executablePath: "/usr/bin/chromium-browser",
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-accelerated-2d-canvas',
       '--disable-gpu',
-      '--no-zygote',
-      // '--single-process',
-    ],
+      '--no-zygote'
+    ]
   });
 
   const page = await browser.newPage({ timeout: 60000 });
   const html = await generateHTML(commonId, next);
   await page.setContent(html);
 
-  // Generate the PDF as a readable stream
-  // const pdfStream = await page.createPDFStream({
-  //   format: "A4"
-  // })
-
   const pdf = await page.pdf({
-    // path:"./course.pdf" ,
     format: "A4",
   });
   await browser.close();
