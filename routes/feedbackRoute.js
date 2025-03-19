@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const authController = require("../controllers/authController");
 
 const {
     getAllQuestions,
@@ -7,11 +8,13 @@ const {
     getFeedbackAnalysis,
 } = require("../controllers/feedbackController");
 
+// Protected routes - require authentication
+router.use(authController.protect);
 
 router.route("/form")
     .get(getAllQuestions)
     .post(postFeedback);
 
-router.route("/analysis/:subjectId").get(getFeedbackAnalysis);
+router.route("/analysis/:commonId").get(getFeedbackAnalysis);
 
 module.exports = router;

@@ -25,6 +25,11 @@ const userSchema = new mongoose.Schema({
     require: [true, "User's email is Missing"],
     unique: [true, "User with same email already exists"],
   },
+  username: {
+    type: String,
+    unique: [true, "User with same username already exists"],
+    sparse: true, // This allows null values but ensures uniqueness for non-null values
+  },
   gender: {
     type: String,
     enum: userGenderEnum,

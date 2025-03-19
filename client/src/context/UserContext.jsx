@@ -95,12 +95,26 @@ export const UserProvider = ({ children }) => {
       if (!email || email === "") {
         throw new Error("Enter Valid email");
       }
-      await axiosInstance.post("auth/send-otp", { email });
-    } catch (err) {
+      
+      console.log("Sending OTP request for email:", email);
+      const response = await axiosInstance.post("auth/send-otp", { email });
+      console.log("OTP response:", response.data);
+      
       dispatch({
         type: ALERT,
-        payload: "Cannot send OTP at the moment Sorry for the inconvenience",
+        payload: "OTP sent successfully. Please check your email.",
       });
+      
+      return true;
+    } catch (err) {
+      console.error("OTP error:", err);
+      
+      dispatch({
+        type: ALERT,
+        payload: err.message || "Cannot send OTP at the moment. Sorry for the inconvenience.",
+      });
+      
+      return false;
     } finally {
       setLoading(false);
     }
@@ -109,6 +123,8 @@ export const UserProvider = ({ children }) => {
   const verifyAdminOTPAndRegister = async ({ name, password, email, otp }) => {
     setLoading(true);
     try {
+      console.log("Sending register request with:", { name, email, password, otp });
+      
       const res = await axiosInstance.post(
         "/auth/register-admin",
         {
@@ -120,14 +136,19 @@ export const UserProvider = ({ children }) => {
         { withCredentials: true }
       );
 
+      console.log("Registration response:", res.data);
+      
       dispatch({
         type: SETUP_USER,
         payload: res.data,
       });
     } catch (err) {
+      console.error("Registration error:", err);
+      const errorMessage = err.message || "Error while verifying OTP";
+      
       dispatch({
         type: ALERT,
-        payload: "Error while verifying OTP",
+        payload: errorMessage,
       });
     } finally {
       setLoading(false);

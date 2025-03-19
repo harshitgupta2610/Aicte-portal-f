@@ -40,7 +40,7 @@ please register here ${process.env.SERVER_URL}`,
     // Check for rejected email addresses
     checkEmailInfo(info)
 }
-exports.sendOTP = async function (email,otp) {
+exports.sendOTP = async function (email, otp) {
     // Create a transporter using Gmail service
     const transporter = getTransporter()
 
@@ -48,9 +48,19 @@ exports.sendOTP = async function (email,otp) {
     const mailOptions = {
         from: process.env.EMAIL, // Sender email address
         to: email, // Receiver email address
-        subject: 'Credentials Information',
-        text: `Your otp : ${otp} \n
-        for registering to "https://aicte-curriculum-portal.onrender.com/api/v1/auth/register"`,
+        subject: 'Your OTP for AICTE Portal Registration',
+        text: `
+Hello,
+
+Your OTP for AICTE Curriculum Portal registration is: ${otp}
+
+This OTP is valid for 20 minutes.
+
+If you did not request this OTP, please ignore this email.
+
+Thank you,
+AICTE Curriculum Portal Team
+`,
     };
     // Send the email
     const info = await transporter.sendMail(mailOptions);

@@ -8,7 +8,7 @@ const otpSchema = new mongoose.Schema({
     },
     time:{
         type:Date,
-        default:Date.now()
+        default:Date.now
     },
     otp: {
         type:String,

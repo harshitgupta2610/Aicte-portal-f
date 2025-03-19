@@ -18,7 +18,16 @@ const { BAD_REQUEST } = require("./errors/index");
 // Midleware :
 if (process.env.NODE_ENV === "development") app.use(morgan("dev"));
 app.use(express.json({ limit: "1mb" }));
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+
+// Configure CORS to allow credentials and handle client requests
+const corsOptions = {
+  origin: process.env.CLIENT_URL || "http://localhost:3000",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+app.use(cors(corsOptions));
+
 app.use(cookieParser());
 //Secure Header
 // app.use(helmet.contentSecurityPolicy({
