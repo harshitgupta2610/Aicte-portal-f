@@ -66,18 +66,18 @@ module.exports = categories = ({ semesters }) => {
     </span>
   </p>`:""
 
-  const materials = (sem)=>
-  sem.sub.referenceMaterial?.cur?.length>0?`<p class="s20" style="padding-top: 9pt;text-align: left;">
+  const materials = (sem) =>
+  sem.sub?.referenceMaterial?.cur?.length > 0 ? `<p class="s20" style="padding-top: 9pt;text-align: left;">
     TEXTBOOKS/REFERENCES:
   </p>
   <ol id="l27">
-  ${sem.sub.referenceMaterial?.cur?.map(resource =>
+  ${sem.sub.referenceMaterial.cur.map(resource =>
       `<li data-list-text="{1.}">
       <p style="padding-top: 2pt;text-align: left;">
-        ${resource.title + (resource.author ? (" by" + resource.author) : "")}
+        ${resource.cur?.title + (resource.cur?.author ? (" by " + resource.cur.author) : "")}
       </p>
     </li>`
-    )}
+    ).join('')}
   </ol>`:""
   
   const outcomes = (sem)=>
@@ -97,6 +97,35 @@ module.exports = categories = ({ semesters }) => {
     )
     }
   </ul>`:""
+
+  const modules = (sem) => {
+    if (!sem.sub?.modules?.cur || sem.sub.modules.cur.length === 0) {
+      return `<p class="s20" style="padding-top: 10pt;text-align: justify;">
+        Course Contents:
+      </p>
+      <p style="padding-top: 2pt;line-height: 114%;text-align: justify;">
+        No course contents available
+      </p>`;
+    }
+
+    return `
+    <p class="s20" style="padding-top: 10pt;text-align: justify;">
+      Course Contents:
+    </p>
+    ${sem.sub.modules.cur.map((module, ind) => {
+      const title = module.cur?.title || "Untitled Module";
+      const topics = module.cur?.topics || "No topics specified";
+      
+      return `
+      <p class="s20" style="padding-top: 11pt;text-align: justify;">
+        Module ${ind + 1}: ${title}
+      </p>
+      <p style="padding-top: 2pt;line-height: 114%;text-align: justify;">
+        ${topics}
+      </p>
+      <p style="padding-top: 2pt;text-indent: 0pt;text-align: left;"><br /></p>`;
+    }).join('')}`;
+  };
 
   return `
 <div class="page-margin">
@@ -195,20 +224,9 @@ ${Object.keys(semesters).map((semNo) =>
     ${prerequisites(sem)}
 
     <p style="text-indent: 0pt;text-align: left;"><br /></p>
-    <p class="s20" style="padding-top: 10pt;text-align: justify;">
-      Course Contents:
-    </p>
-    ${sem.sub.modules?.cur?.map((module, ind) =>
-      `<p class="s20" style="padding-top: 11pt;text-align: justify;">
-        Module ${ind + 1}: ${module.cur?.title}
-      </p>
-      <p style="padding-top: 2pt;line-height: 114%;text-align: justify;">
-        ${module.cur?.topics}
-      </p>
-      <p style="padding-top: 2pt;text-indent: 0pt;text-align: left;"><br /></p>`
-      )
-      }
     
+    ${modules(sem)}
+
     <p style="padding-top: 2pt;text-indent: 0pt;text-align: left;"><br /></p>
     
     ${materials(sem)}

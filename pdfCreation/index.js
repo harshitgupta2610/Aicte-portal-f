@@ -15,73 +15,138 @@ const Resource = require("../models/resourceModel");
 
 // Function to convert course data to HTML
 async function generateHTML(commonId, next) {
-  const course = await findCourse({ commonId, next });
-  const committee = await User.find({
-    "courses.id": { $in: [commonId] },
-  }).setOptions({ skipPostHook: true });
-
-  const subjects = await findCourseSubjects({ commonId, next });
-  let referenceIds = await subjects.map((el) => {
-    const ids = el.doc.referenceMaterial?.cur?.map((el) => el.cur);
-    return ids;
-  });
-  referenceIds = referenceIds.flat().filter((el) => el);
-  const resourse = await Resource.find({ _id: { $in: referenceIds } }).select(
-    "title author"
-  );
-
-  const semesters = {};
-  for (let semNo in course.semesters) {
-    semesters[semNo] = [];
-    for (let i in course.semesters[semNo]) {
-      const sub = subjects.find(
-        (sub) =>
-          sub.doc.common_id?.toString() ===
-          course.semesters[semNo][i]?.cur?.common_id?.toString()
-      );
-
-      for (let i in sub.doc.referenceMaterial?.cur) {
-        sub.doc.referenceMaterial.cur[i] = resourse.find(
-          (r) =>
-            r._id.toString() ===
-            sub.doc.referenceMaterial?.cur[i]?.cur.toString()
-        );
-      }
-      semesters[semNo].push({});
-      semesters[semNo][i].cur = course.semesters[semNo][i].cur;
-      semesters[semNo][i].sub = sub.doc;
+  try {
+    const course = await findCourse({ commonId, next });
+    console.log('Raw Course Data:', JSON.stringify(course, null, 2));
+    
+    if (!course) {
+      console.error('No course found for commonId:', commonId);
+      throw new Error('Course not found');
     }
-  }
-  // console.log(semesters['1'])
 
-  let html = `
-    <!DOCTYPE >
-    <html>
-    <head>
-      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-      <meta name="AICTE" />
-      <style>
-        ${STYLE}
-      </style>
-    </head>
-    <body>
-        ${coverPage({ title: course.title, level: course.level })}
-        ${msgPrefacePage({
-          message: course?.message,
-          preface: course?.preface,
-        })}
-        ${committeeContentPage({ committee })}
-        ${basicInfoPage({
-          definitionOfCredits: course.definitionOfCredits,
-          codesAndDef: course.codesAndDef,
-          rangeOfCredits: course.rangeOfCredits,
-        })}
-        ${categoriesPage({ categories: course?.categories })}
-        ${semestersPage({ semesters })}
-    </body>
-    </html>
-    `;
-  return html;
+    const committee = await User.find({
+      "courses.id": { $in: [commonId] },
+    }).setOptions({ skipPostHook: true });
+    console.log('Committee Data:', JSON.stringify(committee, null, 2));
+
+    const subjects = await findCourseSubjects({ commonId, next });
+    console.log('Raw Subjects Data:', JSON.stringify(subjects, null, 2));
+
+    let referenceIds = [];
+    
+    // Collect all reference material IDs
+    subjects.forEach((subject) => {
+      if (subject?.doc?.referenceMaterial?.cur) {
+        const ids = subject.doc.referenceMaterial.cur
+          .filter(el => el?.cur)
+          .map(el => el.cur);
+        referenceIds = [...referenceIds, ...ids];
+      }
+    });
+    
+    // Remove duplicates and null values
+    referenceIds = [...new Set(referenceIds)].filter((el) => el);
+    console.log('Reference IDs:', referenceIds);
+    
+    const resources = await Resource.find({ _id: { $in: referenceIds } }).select(
+      "title author"
+    );
+    console.log('Resources Data:', JSON.stringify(resources, null, 2));
+
+    const semesters = {};
+    for (let semNo in course.semesters) {
+      semesters[semNo] = [];
+      for (let i in course.semesters[semNo]) {
+        const semesterSubject = course.semesters[semNo][i];
+        const sub = subjects.find(
+          (sub) =>
+            sub?.doc?.common_id?.toString() ===
+            semesterSubject?.cur?.common_id?.toString()
+        );
+
+        if (sub?.doc) {
+          // Process reference materials
+          if (sub.doc.referenceMaterial?.cur) {
+            sub.doc.referenceMaterial.cur = sub.doc.referenceMaterial.cur.map((ref) => {
+              const resource = resources.find(
+                (r) => r._id.toString() === ref.cur?.toString()
+              );
+              return { cur: resource };
+            });
+          }
+
+          // Process modules
+          if (sub.doc.modules?.cur) {
+            sub.doc.modules.cur = sub.doc.modules.cur.map(module => ({
+              cur: {
+                title: module?.cur?.title || "Untitled Module",
+                topics: module?.cur?.topics || "No topics specified"
+              }
+            }));
+          }
+
+          // Process objectives
+          if (sub.doc.objectives?.cur) {
+            sub.doc.objectives.cur = sub.doc.objectives.cur.map(obj => ({
+              cur: obj?.cur || "No objective specified"
+            }));
+          }
+
+          // Process prerequisites
+          if (sub.doc.prerequisites?.cur) {
+            sub.doc.prerequisites.cur = sub.doc.prerequisites.cur.map(pre => ({
+              cur: pre?.cur || "No prerequisite specified"
+            }));
+          }
+
+          // Process outcomes
+          if (sub.doc.outcomes?.cur) {
+            sub.doc.outcomes.cur = sub.doc.outcomes.cur.map(out => ({
+              cur: out?.cur || "No outcome specified"
+            }));
+          }
+        }
+
+        semesters[semNo].push({
+          cur: semesterSubject.cur,
+          sub: sub?.doc || null
+        });
+      }
+    }
+    console.log('Processed Semesters Data:', JSON.stringify(semesters, null, 2));
+
+    let html = `
+      <!DOCTYPE >
+      <html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="AICTE" />
+        <style>
+          ${STYLE}
+        </style>
+      </head>
+      <body>
+          ${coverPage({ title: course.title || "Untitled Course", level: course.level || "Not specified" })}
+          ${msgPrefacePage({
+            message: course?.message || "No message available",
+            preface: course?.preface || "No preface available",
+          })}
+          ${committeeContentPage({ committee })}
+          ${basicInfoPage({
+            definitionOfCredits: course?.definitionOfCredits || "Not defined",
+            codesAndDef: course?.codesAndDef || "Not defined",
+            rangeOfCredits: course?.rangeOfCredits || "Not defined",
+          })}
+          ${categoriesPage({ categories: course?.categories || [] })}
+          ${semestersPage({ semesters })}
+      </body>
+      </html>
+      `;
+    return html;
+  } catch (error) {
+    console.error('Error in generateHTML:', error);
+    throw error;
+  }
 }
 exports.generateHTML = generateHTML;
 

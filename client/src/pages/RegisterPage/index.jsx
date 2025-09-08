@@ -13,7 +13,7 @@ export default function RegisterPage() {
   return (
     <>
       {user && <Navigate to="/" />}
-      <div className="bg-gradient-to-r from-primary-700 to-primary-400 flex flex-col min-h-screen">
+      <div className="bg-gradient-to-r from-blue-700 to-pink-400 flex flex-col min-h-screen">
         <NavBar />
         {!isLogin && (
           <div className="w-full flex justify-evenly items-center mt-8">

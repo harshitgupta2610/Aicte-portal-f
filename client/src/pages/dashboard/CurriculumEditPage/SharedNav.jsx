@@ -112,6 +112,9 @@ const tempList = (common_id) => {
     }, {
       child: "Subjects",
       to: `/curriculum/${common_id}/subjects`,
+    }, {
+      child: "Feedback",
+      to: `/curriculum/${common_id}/feedback`,
     }
   ])
 }

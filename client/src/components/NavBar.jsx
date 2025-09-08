@@ -7,18 +7,16 @@ const NavBar = ({ className }) => {
     <nav
       className={
         (className || "") +
-        " flex justify-between bg-gradient-to-r from-primary-700 to-primary-400 relative"
+        " flex justify-between bg-gradient-to-r from-blue-700 to-pink-400 relative"
       }
     >
       <div className="flex items-center gap-4">
         <ImageComponent
           imageName="LogoImage"
-          className="h-12"
+          className="h-20"
           alt="AICTE_LOGO"
         />
-        <h1 className="text-2xl-custom text-white">
-          AICTE Curriculum Design Portal
-        </h1>
+       <h1 className="text-5xl text-white font-poppins font-semibold "> AICTE Curriculum Design Portal </h1>
       </div>
       <Hamburger siteMapList={SidebarContent} />
     </nav>
