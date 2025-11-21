@@ -408,13 +408,6 @@ exports.updateByUser = async (req, res, next) => {
 };
 
 exports.acceptUpdates = async function (req, res, next) {
-  //req.body = {
-  //  prop:"prop.ind",
-  //  index:
-  //  del:
-  //  isnew
-  // }
-
   let { index, isnew, del, prop } = req.body;
   if (prop === undefined || index === undefined)
     return next(new BAD_REQUEST("improper request body"));
@@ -436,77 +429,91 @@ exports.acceptUpdates = async function (req, res, next) {
     commonId: courseCommonId,
     next,
   });
-  // const course = (await Course.find({common_id:courseCommonId})
-  //     .sort({version:-1})
-  //     .limit(1))[0]
 
   if (!course) return next(new BAD_REQUEST("Invalid Course Id"));
   if (!course[prop]) return next(new BAD_REQUEST("Field does not exists"));
 
   let subjectName;
-  if (del) {
-    if (!course[prop].del)
-      return next(new BAD_REQUEST("cannot delete from a non array field"));
+  try {
+    // Handle non-array fields (like message, description, etc.)
+    if (!course[prop].add && !course[prop].del && !course[prop].cur) {
+      if (index >= course[prop].new.length)
+        return next(new BAD_REQUEST("index range out of bond"));
 
-    if (index >= course[prop].del.length)
-      return next(new BAD_REQUEST("index range out of bond"));
+      const newValue = course[prop].new[index].value;
+      await Course.findOneAndUpdate(
+        { _id: course._id },
+        {
+          $set: {
+            [`${prop}.cur`]: newValue,
+          },
+          $pull: {
+            [`${prop}.new`]: course[prop].new[index],
+          },
+        }
+      );
+    } else if (del) {
+      if (!course[prop].del)
+        return next(new BAD_REQUEST("cannot delete from a non array field"));
 
-    const delInd = course[prop].del[index].index * 1;
+      if (index >= course[prop].del.length)
+        return next(new BAD_REQUEST("index range out of bond"));
 
-    course[prop].del = course[prop].del.filter(
-      (update) => update?.index * 1 !== delInd
-    );
+      const delInd = course[prop].del[index].index * 1;
 
-    for (let i in course[prop].del) {
-      if (course[prop].del[i].index > delInd) {
-        course[prop].del[i].index--;
+      course[prop].del = course[prop].del.filter(
+        (update) => update?.index * 1 !== delInd
+      );
+
+      for (let i in course[prop].del) {
+        if (course[prop].del[i].index > delInd) {
+          course[prop].del[i].index--;
+        }
       }
-    }
-    let common_id = undefined;
-    if (prop === "subjects") {
-      common_id = course[prop].cur[delInd].cur.common_id;
-      subjectName = course[prop].cur[delInd].cur.title;
-    }
-    course[prop].cur.splice(delInd, 1);
-
-    await Course.findOneAndUpdate(
-      { _id: course._id },
-      {
-        $set: {
-          [`${prop}.del`]: course[prop].del,
-          [`${prop}.cur`]: course[prop].cur,
-        },
+      let common_id = undefined;
+      if (prop === "subjects") {
+        common_id = course[prop].cur[delInd].cur.common_id;
+        subjectName = course[prop].cur[delInd].cur.title;
       }
-    );
+      course[prop].cur.splice(delInd, 1);
 
-    if (common_id !== undefined) {
-      await Subject.deleteMany({ common_id: common_id });
-    }
-  } else if (isnew) {
-    if (!course[prop].add)
-      return next(new BAD_REQUEST("cannot add to a non array field"));
-    if (index >= course[prop].add.length)
-      return next(new BAD_REQUEST("index range out of bond"));
+      await Course.findOneAndUpdate(
+        { _id: course._id },
+        {
+          $set: {
+            [`${prop}.del`]: course[prop].del,
+            [`${prop}.cur`]: course[prop].cur,
+          },
+        }
+      );
 
-    const current = {
-      new: [],
-      cur: course[prop].add.splice(index, 1)[0].value,
-    };
-
-    if (prop === "subjects") {
-      try {
-        const new_sub = await createSubject({
-          ...req.body,
-          courseId: courseCommonId,
-        });
-        current.cur.common_id = new_sub.common_id;
-        subjectName = new_sub.title.cur;
-      } catch (err) {
-        return res.status(500).send({ message: "Cannot create the subject." });
+      if (common_id !== undefined) {
+        await Subject.deleteMany({ common_id: common_id });
       }
-    }
+    } else if (isnew) {
+      if (!course[prop].add)
+        return next(new BAD_REQUEST("cannot add to a non array field"));
+      if (index >= course[prop].add.length)
+        return next(new BAD_REQUEST("index range out of bond"));
 
-    try {
+      const current = {
+        new: [],
+        cur: course[prop].add.splice(index, 1)[0].value,
+      };
+
+      if (prop === "subjects") {
+        try {
+          const new_sub = await createSubject({
+            ...req.body,
+            courseId: courseCommonId,
+          });
+          current.cur.common_id = new_sub.common_id;
+          subjectName = new_sub.title.cur;
+        } catch (err) {
+          return res.status(500).send({ message: "Cannot create the subject." });
+        }
+      }
+
       await Course.findOneAndUpdate(
         { _id: course._id },
         {
@@ -518,92 +525,89 @@ exports.acceptUpdates = async function (req, res, next) {
           },
         }
       );
-    } catch (err) {
-      if (prop === "subjects") {
-        await Subject.deleteMany({ common_id: new_sub.common_id });
-        return res.status(500).send({ message: "Cannot update the course." });
-      }
-    }
-  } else {
-    if (ind !== -1) {
-      if (!course[prop].add)
-        return next(
-          new BAD_REQUEST(
-            `cannot update element at index ${ind} for a non array field`
-          )
-        );
-      if (ind >= course[prop].cur.length)
-        return next(new BAD_REQUEST("index range out of bond"));
+    } else {
+      if (ind !== -1) {
+        if (!course[prop].cur[ind]?.new)
+          return next(
+            new BAD_REQUEST(
+              `cannot update element at index ${ind} for a non array field`
+            )
+          );
+        if (ind >= course[prop].cur.length)
+          return next(new BAD_REQUEST("index range out of bond"));
 
-      const valueToRemove = course[prop].cur[ind].new[index];
-      const val = JSON.parse(JSON.stringify(valueToRemove.value));
-      if (typeof val === "object") {
-        for (let i in course[prop].cur[ind].cur) {
-          if (val[i] === undefined) {
-            val[i] = course[prop].cur[ind].cur[i];
+        const valueToRemove = course[prop].cur[ind].new[index];
+        const val = JSON.parse(JSON.stringify(valueToRemove.value));
+        if (typeof val === "object") {
+          for (let i in course[prop].cur[ind].cur) {
+            if (val[i] === undefined) {
+              val[i] = course[prop].cur[ind].cur[i];
+            }
+          }
+
+          if (prop === "subjects") {
+            subjectName = val.title;
           }
         }
 
-        if (prop === "subjects") {
-          subjectName = val.title;
-        }
+        await Course.findOneAndUpdate(
+          { _id: course._id },
+          {
+            $set: {
+              [`${prop}.cur.${ind}.cur`]: val,
+            },
+            $pull: {
+              [`${prop}.cur.${ind}.new`]: valueToRemove,
+            },
+          }
+        );
+      } else {
+        if (index >= course[prop].new.length)
+          return next(new BAD_REQUEST("index range out of bond"));
+
+        await Course.findOneAndUpdate(
+          { _id: course._id },
+          {
+            $set: {
+              [`${prop}.cur`]: course[prop].new[index].value,
+            },
+            $pull: {
+              [`${prop}.new`]: course[prop].new[index],
+            },
+          }
+        );
       }
-
-      await Course.findOneAndUpdate(
-        { _id: course._id },
-        {
-          $set: {
-            [`${prop}.cur.${ind}.cur`]: val,
-          },
-          $pull: {
-            [`${prop}.cur.${ind}.new`]: valueToRemove,
-          },
-        }
-      );
-    } else {
-      if (index >= course[prop].new.length)
-        return next(new BAD_REQUEST("index range out of bond"));
-
-      course = await Course.findOneAndUpdate(
-        { _id: course._id },
-        {
-          $set: {
-            [`${prop}.cur`]: course[prop].new[index].value,
-          },
-          $pull: {
-            [`${prop}.new`]: course[prop].new[index],
-          },
-        },
-        { new: true }
-      );
     }
+
+    let message = `${
+      del ? "One of the value of " : "The"
+    } '${prop}' propery of the course has ${
+      del ? "been deleted" : isnew ? "new value" : "been changed"
+    }.`;
+
+    if (prop === "subjects") {
+      message = `The ${subjectName} subject ${
+        isnew
+          ? "has been added to the course"
+          : del
+          ? "has been removed from the coures"
+          : "in the course has some changes."
+      }`;
+    }
+
+    pushNotification({
+      heading: `Course ${course.title.cur} has some changes.`,
+      message,
+      isCourse: true,
+      target: course.common_id.toString(),
+      link: `${process.env.CLIENT_URL}/curriculum/${course.common_id}`,
+    });
+
+    res.status(200).send({
+      status: "success",
+    });
+  } catch (err) {
+    console.error("Error in acceptUpdates:", err);
+    return next(new CustomAPIError("Failed to process the update", 500));
   }
-
-  let message = `${
-    del ? "One of the value of " : "The"
-  } '${prop}' propery of the course has ${
-    del ? "been deleted" : isnew ? "new value" : "been changed"
-  }.`;
-
-  if (prop === "subjects") {
-    message = `The ${subjectName} subject ${
-      isnew
-        ? "has been added to the course"
-        : del
-        ? "has been removed from the coures"
-        : "in the course has some changes."
-    }`;
-  }
-
-  pushNotification({
-    heading: `Course ${course.title.cur} has some changes.`,
-    message,
-    isCourse: true,
-    target: course.common_id.toString(),
-    link: `${process.env.CLIENT_URL}/curriculum/${course.common_id}`,
-  });
-
-  res.status(200).send({
-    status: "success",
-  });
 };

@@ -81,7 +81,7 @@ export default function SharedNav() {
         <Outlet />
       </main>
       <motion.div
-        className="fixed top-[80px] right-0 h-[86vh] rounded-l-2xl bg-white border-solid border-8 border-primary-50"
+        className="fixed top-[80px] right-0 h-[86vh] w-[400px] z-50 rounded-l-2xl bg-white border-solid border-8 border-primary-50"
         initial={{
           right: "0px",
         }}
@@ -89,7 +89,7 @@ export default function SharedNav() {
           showChats ? {
             right: "0px",
           } : {
-            right: "-3600px",
+            right: "-450px",
           }
         }
       >
@@ -112,6 +112,9 @@ const tempList = (common_id) => {
     }, {
       child: "Subjects",
       to: `/curriculum/${common_id}/subjects`,
+    }, {
+      child: "Feedback",
+      to: `/curriculum/${common_id}/feedback`,
     }
   ])
 }

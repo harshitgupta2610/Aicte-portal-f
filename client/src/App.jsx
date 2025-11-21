@@ -20,6 +20,7 @@ import {
   SemestersPage,
   SubjectRoutes,
 } from "./pages/dashboard/CurriculumEditPage";
+import FeedbackForm from "./pages/dashboard/FeedbackPage/FeedbackForm";
 
 const App = () => {
   return (
@@ -48,6 +49,7 @@ const App = () => {
             </Route>
             <Route path="versions" element={<VersionPage />} />
             <Route path="users" element={<UsersPage />} />
+            <Route path="feedback" element={<FeedbackForm />} />
           </Route>
 
           <Route path="explore" element={<ExplorePage />} />

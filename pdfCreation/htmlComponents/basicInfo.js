@@ -1,9 +1,9 @@
-module.exports = basicInfo = ({definitionOfCredits, codesAndDef, rangeOfCredits})=>(
+const basicInfo = ({definitionOfCredits, codesAndDef, rangeOfCredits})=>(
 `<div class="page-margin">
 <p style="text-indent: 0pt;text-align: left;"><br /></p>
 <p class="s19" style="line-height: 114%;text-align: center;">
   GENERAL COURSE STRUCTURE &amp;THEME
-</p>
+</p>http://localhost:3000/
 <p style="padding-top: 5pt;"><br /></p>
 <p class="s18" style="text-indent: 0pt;text-align: center;">
   GENERAL COURSE STRUCTURE &amp; THEME
@@ -98,3 +98,5 @@ module.exports = basicInfo = ({definitionOfCredits, codesAndDef, rangeOfCredits}
 
 <p style="padding-top: 6pt;text-indent: 0pt;text-align: left;"><br /></p>`
 )
+
+module.exports = basicInfo;

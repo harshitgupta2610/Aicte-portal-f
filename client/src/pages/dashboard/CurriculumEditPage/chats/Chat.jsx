@@ -49,7 +49,7 @@ export const Chat = ({ room, user, className, onClose }) => {
   };
 
   return (
-    <div className="flex flex-col h-full pt-4">
+    <div className="flex flex-col h-full w-full pt-4 relative">
       <div className="flex-grow overflow-auto p-4 gap-y-4">
         {messages.map((message) => (
           <div key={message.id} className="flex border rounded-lg p-2">
@@ -79,10 +79,11 @@ export const Chat = ({ room, user, className, onClose }) => {
         </button>
       </form>
       <button
-        className="absolute top-2 right-2 text-2xl-custom"
+        className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-200 transition-colors"
         onClick={onClose}
+        title="Close"
       >
-        <ImageComponent imageName="CloseImage" className="w-8 h-6" />
+        <ImageComponent imageName="CloseImage" className="w-6 h-6" />
       </button>
     </div>
   );
