@@ -129,7 +129,97 @@ const compare = async (req, res) => {
   }
 };
 
+const analyzeFeedback = async (req, res) => {
+  try {
+    const { feedbackTexts } = req.body;
+
+    if (!feedbackTexts || !Array.isArray(feedbackTexts) || feedbackTexts.length === 0) {
+      return res.status(400).json({ error: "Valid feedback texts array is required." });
+    }
+
+    // Limit to a reasonable amount of text to avoid token limits
+    const combinedText = feedbackTexts.slice(0, 100).join("\n- "); 
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const prompt = `
+      Analyze the following student feedback for a course:
+
+      ${combinedText}
+
+      Provide a deep, structured analysis in the following JSON format (do not use Markdown code blocks, just raw JSON):
+      {
+        "executiveSummary": "A concise, high-level summary of the overall feedback.",
+        "sentiment": {
+          "positive": 0,
+          "negative": 0,
+          "neutral": 0
+        },
+        "aspectAnalysis": {
+          "content": { 
+            "sentiment": "positive/neutral/negative", 
+            "score": 0,
+            "keyPoints": ["Point 1", "Point 2"] 
+          },
+          "delivery": { 
+            "sentiment": "positive/neutral/negative", 
+            "score": 0,
+            "keyPoints": ["Point 1", "Point 2"] 
+          },
+          "assessment": { 
+            "sentiment": "positive/neutral/negative", 
+            "score": 0,
+            "keyPoints": ["Point 1", "Point 2"] 
+          }
+        },
+        "actionableRecommendations": [
+          { "priority": "High", "action": "Specific action to take..." },
+          { "priority": "Medium", "action": "Specific action to take..." },
+          { "priority": "Low", "action": "Specific action to take..." }
+        ],
+        "criticalAlerts": ["Alert 1 (only if urgent)", "Alert 2"]
+      }
+
+      For "sentiment" (overall), provide percentages (0-100) summing to 100.
+      For "aspectAnalysis", "score" should be 0-10 (10 being best).
+      "criticalAlerts" should be empty if there are no urgent/severe issues (like harassment, unfair grading, completely broken content).
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    let text = response.text();
+
+    // Clean up potential markdown code blocks
+    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+    let jsonResponse;
+    try {
+        jsonResponse = JSON.parse(text);
+    } catch (e) {
+        console.error("Failed to parse JSON response from AI", e);
+        // Fallback
+        jsonResponse = {
+            executiveSummary: "Could not generate summary.",
+            sentiment: { positive: 0, negative: 0, neutral: 0 },
+            aspectAnalysis: {
+                content: { sentiment: "neutral", score: 0, keyPoints: [] },
+                delivery: { sentiment: "neutral", score: 0, keyPoints: [] },
+                assessment: { sentiment: "neutral", score: 0, keyPoints: [] }
+            },
+            actionableRecommendations: [],
+            criticalAlerts: []
+        };
+    }
+
+    res.status(200).json(jsonResponse);
+  } catch (error) {
+    console.error("Error in feedback analysis:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   chat,
   compare,
+  analyzeFeedback,
 };

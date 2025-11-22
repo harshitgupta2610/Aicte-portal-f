@@ -11,4 +11,6 @@ router.post(
   aiController.compare
 );
 
+router.post("/analyze-feedback", aiController.analyzeFeedback);
+
 module.exports = router;
