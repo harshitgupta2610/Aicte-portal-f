@@ -571,7 +571,7 @@ const STYLE = `
     vertical-align: top;
     overflow: visible;
     page-break-inside: avoid;
-    margin-block:18pt
+    margin-block:5pt
   }
   td{
     padding-inline: 6pt;

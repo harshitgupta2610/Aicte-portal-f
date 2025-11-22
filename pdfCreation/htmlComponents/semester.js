@@ -132,15 +132,15 @@ module.exports = categories = ({ semesters }) => {
 <h4 style="text-align: center;">SEMESTER WISE STRUCTURE</h4>
 
 <p style="padding-top: 12pt;text-indent: 0pt;text-align: left;"><br /></p>
-<p style="text-indent: 0pt;text-align: left;"><br /></p>
 ${Object.keys(semesters).map((semNo) =>
     `
-  <h4 style="text-align: center;">SEMESTER – ${semNo}</h4>
+  <h4 style="text-align: center; page-break-before: always;">SEMESTER – ${semNo}</h4>
   <p style="padding-top: 5pt;text-align: left;"><br /></p>
-  ${semesters[semNo].map(sem =>
-      `<p class="s14" style="text-align: center;">${(sem.cur?.title) || "-"}</p>
+  ${semesters[semNo].map((sem, index) =>
+      `
+    <p class="s14" style="text-align: center; ${index > 0 ? 'page-break-before: always;' : ''}">${(sem.cur?.title) || "-"}</p>
 
-    <table style="border-collapse:collapse;" cellspacing="0">
+    <table style="border-collapse:collapse; margin-top: 10pt;" cellspacing="0">
       <tr style="height:20pt">
         <td
           style="width:225pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
@@ -215,7 +215,7 @@ ${Object.keys(semesters).map((semNo) =>
       </tr>
     </table>
 
-    <p style="padding-top: 9pt;text-align: left;"><br /></p>
+    <p style="padding-top: 5pt;text-align: left;"><br /></p>
 
     ${objectives(sem)}
 
@@ -232,12 +232,10 @@ ${Object.keys(semesters).map((semNo) =>
     ${materials(sem)}
 
     <p style="padding-top: 2pt;text-indent: 0pt;text-align: left;"><br /></p>
-    <p style="padding-top: 2pt;text-indent: 0pt;text-align: left;"><br /></p>
 
     ${experiments()}
 
     ${outcomes(sem)}
-    <p class="s38" style="text-align: center;">*****</p>
     <p style="padding-top: 12pt;text-indent: 0pt;text-align: left;"><br /></p>`
 
     )}
